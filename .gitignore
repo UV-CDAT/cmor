@@ -12,7 +12,6 @@
 .vscode/
 Test/CMIP5
 CMIP5
-Makefile
 build
 dist
 test_bin
