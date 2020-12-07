@@ -62,43 +62,43 @@ aliases:
     name: run_cmor_tests
     command: |
        source $BASH_ENV
-       source $WORKDIR/miniconda/etc/profile.d/conda.sh
-       conda activate base
-       export UVCDAT_ANONYMOUS_LOG=False
-       set +e
-       conda create -y -n py$PYTHON_VERSION --use-local $CHANNELS python=$PYTHON_VERSION $PKG_NAME $PKGS $CONDA_COMPILERS
-       conda activate py$PYTHON_VERSION
-       set -e
-       ./configure --prefix=$CONDA_PREFIX --with-python --with-uuid=$CONDA_PREFIX --with-json-c=$CONDA_PREFIX --with-udunits2=$CONDA_PREFIX --with-netcdf=$CONDA_PREFIX  --enable-verbose-test
-       make test -o cmor -o python
+      #  source $WORKDIR/miniconda/etc/profile.d/conda.sh
+      #  conda activate base
+      #  export UVCDAT_ANONYMOUS_LOG=False
+      #  set +e
+      #  conda create -y -n py$PYTHON_VERSION --use-local $CHANNELS python=$PYTHON_VERSION $PKG_NAME $PKGS $CONDA_COMPILERS
+      #  conda activate py$PYTHON_VERSION
+      #  set -e
+      #  ./configure --prefix=$CONDA_PREFIX --with-python --with-uuid=$CONDA_PREFIX --with-json-c=$CONDA_PREFIX --with-udunits2=$CONDA_PREFIX --with-netcdf=$CONDA_PREFIX  --enable-verbose-test
+      #  make test -o cmor -o python
 
   - &run_cmor_tests_with_cdms2
     name: run_cmor_tests_with_cdms2
     command: |
        source $BASH_ENV
-       source $WORKDIR/miniconda/etc/profile.d/conda.sh
-       conda activate base
-       export UVCDAT_ANONYMOUS_LOG=False
-       # run tests again but with cdms2 installed
-       set +e
-       conda create -y -n py$PYTHON_VERSION_cdms2 --use-local $CHANNELS python=$PYTHON_VERSION $PKG_NAME $PKGS $CONDA_COMPILERS cdms2
-       conda activate py$PYTHON_VERSION_cdms2
-       set -e
-       make test -o cmor -o python
+      #  source $WORKDIR/miniconda/etc/profile.d/conda.sh
+      #  conda activate base
+      #  export UVCDAT_ANONYMOUS_LOG=False
+      #  # run tests again but with cdms2 installed
+      #  set +e
+      #  conda create -y -n py$PYTHON_VERSION_cdms2 --use-local $CHANNELS python=$PYTHON_VERSION $PKG_NAME $PKGS $CONDA_COMPILERS cdms2
+      #  conda activate py$PYTHON_VERSION_cdms2
+      #  set -e
+      #  make test -o cmor -o python
 
   - &run_prepare_tests
     name: run_prepare_tests
     command: |
        source $BASH_ENV
-       source $WORKDIR/miniconda/etc/profile.d/conda.sh
-       conda activate base
-       export UVCDAT_ANONYMOUS_LOG=False
-       set +e
-       conda activate py$PYTHON_VERSION_cdms2
-       set -e
-       export PYTHONPATH=Test/:$PYTHONPATH
-       for file in `ls -1 Test/test_python_CMIP6_CV*.py`; do echo $file; python $file; mystatus=$?; if [[ "$mystatus" != "0" ]]; then return ${mystatus}; fi; done
-       python run_tests.py -v2 -H -n1 Test/test_python_CMIP6_CV*.py
+      #  source $WORKDIR/miniconda/etc/profile.d/conda.sh
+      #  conda activate base
+      #  export UVCDAT_ANONYMOUS_LOG=False
+      #  set +e
+      #  conda activate py$PYTHON_VERSION_cdms2
+      #  set -e
+      #  export PYTHONPATH=Test/:$PYTHONPATH
+      #  for file in `ls -1 Test/test_python_CMIP6_CV*.py`; do echo $file; python $file; mystatus=$?; if [[ "$mystatus" != "0" ]]; then return ${mystatus}; fi; done
+      #  python run_tests.py -v2 -H -n1 Test/test_python_CMIP6_CV*.py
        
   - &conda_upload
     name: conda_upload
@@ -108,7 +108,9 @@ aliases:
        conda activate base
        conda config --set anaconda_upload no
        export ARTIFACT_DIR=`pwd`/artifacts
-       anaconda -t $CONDA_UPLOAD_TOKEN upload -u $USER -l $LABEL $ARTIFACT_DIR/*/*.tar.bz2 --force
+       ls $ARTIFACT_DIR
+       find $ARTIFACT_DIR -type f -print
+      #  anaconda -t $CONDA_UPLOAD_TOKEN upload -u $USER -l $LABEL $ARTIFACT_DIR/*/*.tar.bz2 --force
 
 
 executors:
@@ -195,14 +197,14 @@ workflows:
               matrix:
                  parameters:
                     os: [ linux-64, osx-64 ]
-                    python_version: [ "3.6", "3.7", "3.8" ]
+                    python_version: [ "3.8" ]
               name: build-<< matrix.os >>-<< matrix.python_version >>
 
          - test:
               matrix:
                  parameters:
                     os: [ linux-64, osx-64 ]
-                    python_version: [ "3.6", "3.7", "3.8" ]
+                    python_version: [ "3.8" ]
               name: test-<< matrix.os >>-<< matrix.python_version >>
               requires:
                  - build-<< matrix.os >>-<< matrix.python_version >>
@@ -210,6 +212,6 @@ workflows:
          - upload:
               requires:
                  - test
-              filters:
-                 branches:
-                    only: master
+            #   filters:
+            #      branches:
+            #         only: master
