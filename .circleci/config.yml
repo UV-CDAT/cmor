@@ -114,14 +114,14 @@ aliases:
 
 
 executors:
-   linux-64:
+   linux:
       machine:
          image: circleci/classic:latest
       environment:
         OS: "linux-64"
         PROJECT_DIR: "workdir/linux"
         CONDA_COMPILERS: "gcc_linux-64 gfortran_linux-64"
-   osx-64:
+   macos:
       macos:
          xcode: "11.4.0"
       environment:
@@ -130,6 +130,22 @@ executors:
         CONDA_COMPILERS: "clang_osx-64 gfortran_osx-64"
          
 jobs:
+   setup:
+      parameters:
+         os:
+            type: executor
+      executor: << parameters.os >>
+      steps:
+         - checkout
+         - attach_workspace:
+              at: .
+         - run: *setup_env
+         - run: *setup_miniconda
+         - persist_to_workspace:
+              root: .
+              paths:
+                 - workdir
+
    build:
       parameters:
          os:
@@ -141,45 +157,29 @@ jobs:
          PKG_NAME: "cmor"
          VERSION: "3.6.0"
          PYTHON_VERSION: << parameters.python_version >>
-      steps:
-         - checkout
-         - attach_workspace:
-              at: .
-         - run: *setup_env
-         - run: *setup_miniconda
-         - run: *conda_rerender
-         - run: *conda_build
-         - persist_to_workspace:
-              root: .
-              paths:
-                 - workdir
-                 - artifacts
-
-   test:
-      parameters:
-         os:
-            type: executor
-         python_version: 
-            type: string
-      executor: << parameters.os >>
-      environment:
-         PKG_NAME: "cmor"
          CHANNELS: "-c cdat/label/nightly -c conda-forge -c cdat"
          PKGS: " lazy-object-proxy testsrunner"
-         PYTHON_VERSION: << parameters.python_version >>
       steps:
          - checkout
          - attach_workspace:
               at: .
          - run: *setup_env
+         - run: *conda_rerender
+         - run: *conda_build
          - run: *pull_submodules
          - run: *run_cmor_tests
          - run: *run_cmor_tests_with_cdms2
          - run: *run_prepare_tests
+         - persist_to_workspace:
+              root: .
+              paths:
+                 - artifacts
 
    upload:
-      machine:
-         image: circleci/classic:latest
+      parameters:
+         os:
+            type: executor
+      executor: << parameters.os >>
       environment:
          USER: "pcmdi"
          LABEL: "nightly"
@@ -193,23 +193,27 @@ jobs:
 workflows:
    cmor:
       jobs:
-         - build:
+         - setup:
               matrix:
                  parameters:
                     os: [ linux-64, osx-64 ]
                     python_version: [ "3.8" ]
               name: build-<< matrix.os >>-<< matrix.python_version >>
 
-         - test:
+         - build:
               matrix:
                  parameters:
-                    os: [ linux-64, osx-64 ]
-                    python_version: [ "3.8" ]
-              name: test-<< matrix.os >>-<< matrix.python_version >>
+                    os: [ linux, macos ]
+                    python_version: [ "3.6", "3.7", "3.8" ]
+              name: build-<< matrix.os >>-<< matrix.python_version >>
               requires:
-                 - build-<< matrix.os >>-<< matrix.python_version >>
+                 - setup-<< matrix.os >>
 
          - upload:
+              matrix:
+                 parameters:
+                    os: [ linux ]
+              name: upload
               requires:
                  - test
             #   filters:
