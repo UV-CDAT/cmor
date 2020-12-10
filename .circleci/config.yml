@@ -214,7 +214,7 @@ workflows:
                     os: [ linux ]
               name: upload
               requires:
-                 - test
+                 - build
             #   filters:
             #      branches:
             #         only: master
