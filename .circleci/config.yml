@@ -204,7 +204,7 @@ workflows:
               matrix:
                  parameters:
                     os: [ linux, macos ]
-                    python_version: [ "3.6", "3.7", "3.8" ]
+                    python_version: [ "3.8" ]
               name: build-<< matrix.os >>-<< matrix.python_version >>
               requires:
                  - setup-<< matrix.os >>
